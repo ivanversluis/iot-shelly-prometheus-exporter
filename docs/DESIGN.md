@@ -1,6 +1,6 @@
 # Shelly Prometheus Exporter — Design
 
-> Initial version — local/WSL testing only, not yet deployed to the `homelabs` cluster (2026-09-01).
+> Manifests created for the `homelabs` cluster (2026-09-01); image published to GHCR. Awaiting a Flux push/reconcile.
 
 ## Fit with homelabs
 
@@ -11,9 +11,10 @@ this exporter does not talk to a device on the local network — it talks to the
 Control API** over the internet, so there is no local device IP/CIDR to manage and no NetworkPolicy
 egress rule to a LAN host.
 
-**Current status:** code, tests, and local run/Docker build only. Kubernetes manifests under
-`infra/home-exporters/shelly-prometheus-exporter/` in `homelabs` have not been created yet — see
-"Remaining rollout work" below.
+**Current status:** Kubernetes manifests exist under
+`infra/home-exporters/shelly-prometheus-exporter/` in `homelabs` (Deployment, Service, ConfigMap,
+ExternalSecret, NetworkPolicy), plus a Prometheus scrape job and Grafana dashboard. See
+"Remaining rollout work" below for what's left.
 
 ## Why the `/device/all_status` endpoint
 
@@ -34,9 +35,9 @@ The API is rate-limited to 1 request/second account-wide; polling all devices in
 `POLL_INTERVAL` seconds (default 30s) stays well within that limit regardless of how many devices
 are on the account.
 
-## Secret handling (current: local env vars, future: Vault)
+## Secret handling (Vault-backed in Kubernetes; plain env vars for local runs)
 
-A Vault secret already exists at:
+A Vault secret exists at:
 
 ```text
 Vault path:  infra/home-exporters/iot-shelly-prometheus-exporter
@@ -44,13 +45,16 @@ Keys:        cloud-key   (the Shelly Cloud authorization key)
              server      (e.g. https://shelly-213-eu.shelly.cloud)
 ```
 
-For now (per explicit request) these are exported as plain environment variables in the local/WSL
-dev environment for testing, **not** wired through Vault/ExternalSecret/Kubernetes yet:
+In Kubernetes, `infra/home-exporters/shelly-prometheus-exporter/shelly-prometheus-exporter-externalsecret.yaml`
+maps these to the exporter's env vars via an `ExternalSecret`:
 
 ```text
 SHELLY_AUTH_KEY    <- cloud-key
 SHELLY_SERVER_URI  <- server
 ```
+
+For local/WSL runs outside the cluster, export the same two values as plain environment variables
+(see [README.md](../README.md#local-run)).
 
 `SHELLY_AUTH_KEY` is never logged — only the request URL path and non-secret params would appear in
 debug logs, and `requests` does not log query parameters at INFO level in this exporter.
@@ -88,10 +92,10 @@ and environment-sensor Shelly devices. Cover (roller shutter) position/state is 
 - [x] `.github/workflows/docker-build.yaml` copied (image name auto-derived from `github.repository`).
 - [x] `Dockerfile`, `pyproject.toml`, `requirements.txt` copied.
 - [x] Shelly `cloud-key`/`server` already stored in Vault at `infra/home-exporters/iot-shelly-prometheus-exporter`.
-- [ ] Wire `SHELLY_AUTH_KEY`/`SHELLY_SERVER_URI` through an `ExternalSecret` (currently plain env vars for local testing only).
-- [ ] Create `infra/home-exporters/shelly-prometheus-exporter/` manifests in `homelabs` (no local IP/CIDR needed — egress is to the public Shelly Cloud API, not a LAN device).
-- [ ] Add `home-exporters/shelly-prometheus-exporter/` to `infra/kustomization.yaml`.
-- [ ] Add a static scrape job to `infra/observability/prometheus/configmap.yaml`.
-- [ ] Add a Grafana dashboard configmap under `infra/observability/grafana/`.
-- [ ] Push exporter code; wait for GHCR action to publish the image.
+- [x] Wire `SHELLY_AUTH_KEY`/`SHELLY_SERVER_URI` through an `ExternalSecret` (`infra/home-exporters/shelly-prometheus-exporter/shelly-prometheus-exporter-externalsecret.yaml`).
+- [x] Create `infra/home-exporters/shelly-prometheus-exporter/` manifests in `homelabs` (no local IP/CIDR needed — egress is to the public Shelly Cloud API via a `0.0.0.0/0` except-RFC1918 NetworkPolicy rule on port 443).
+- [x] Add `home-exporters/shelly-prometheus-exporter/` to `infra/kustomization.yaml`.
+- [x] Add a static scrape job to `infra/observability/prometheus/configmap.yaml`.
+- [x] Add a Grafana dashboard configmap under `infra/observability/grafana/` (`dashboard-shelly-configmap.yaml`, uid `shelly-devices`).
+- [ ] Push exporter code; wait for GHCR action to publish the image. *(image already published per user confirmation: `ghcr.io/ivanversluis/iot-shelly-prometheus-exporter`.)*
 - [ ] Push homelabs manifests; wait for Flux to reconcile.

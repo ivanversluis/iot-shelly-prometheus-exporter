@@ -8,8 +8,8 @@ opening any inbound access to devices on the LAN. Intended for the `ivanversluis
 ghcr.io/ivanversluis/iot-shelly-prometheus-exporter
 ```
 
-> **Status:** local/WSL testing only for now — not yet deployed to the `homelabs` Kubernetes
-> cluster. See [docs/DESIGN.md](docs/DESIGN.md) for the planned rollout.
+> **Status:** manifests created under `homelabs/infra/home-exporters/shelly-prometheus-exporter/`;
+> awaiting a Flux push/reconcile. See [docs/DESIGN.md](docs/DESIGN.md) for the rollout checklist.
 
 ## Architecture
 
@@ -94,5 +94,8 @@ The GitHub Actions workflow at `.github/workflows/docker-build.yaml` builds and 
 
 ## Homelabs deployment
 
-Not yet created. See [docs/DESIGN.md](docs/DESIGN.md#remaining-rollout-work) for the planned
-`infra/home-exporters/shelly-prometheus-exporter/` manifests and Vault/ExternalSecret wiring.
+Manifests live in `homelabs/infra/home-exporters/shelly-prometheus-exporter/` (Deployment,
+Service, ConfigMap, ExternalSecret, NetworkPolicy), wired into Prometheus scraping and a Grafana
+dashboard (`shelly-devices`, uid `shelly-devices`). See
+[docs/DESIGN.md](docs/DESIGN.md#remaining-rollout-work) for the rollout checklist — the only
+remaining step is pushing the `homelabs` manifests for Flux to reconcile.

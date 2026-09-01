@@ -5,10 +5,11 @@ import re
 import time
 from typing import Any
 
+import requests
 from prometheus_client import Counter, Gauge, start_http_server
 
 from .config import ShellyConfig
-from .shelly_client import fetch_all_devices
+from .shelly_client import ShellyAuthError, ShellyRateLimitError, fetch_all_devices
 
 log = logging.getLogger(__name__)
 
@@ -115,6 +116,7 @@ def _update_gen1(device_id: str, payload: dict[str, Any]) -> None:
         _set(RELAY_ENERGY_TOTAL, emeter.get("total"), device_id, channel)
 
     _set(TEMPERATURE, (payload.get("tmp") or {}).get("tC"), device_id, "0")
+    _set(HUMIDITY, (payload.get("hum") or {}).get("value"), device_id, "0")
     _set(BATTERY, (payload.get("bat") or {}).get("value"), device_id)
     _set(WIFI_RSSI, (payload.get("wifi_sta") or {}).get("rssi"), device_id)
 
@@ -183,6 +185,26 @@ def poll_loop(config: ShellyConfig) -> None:
             devices_status = fetch_all_devices(config)
             update_metrics(devices_status)
             log.debug("Updated Shelly metrics from %d devices", len(devices_status))
+        except ShellyAuthError:
+            SCRAPE_ERRORS.inc()
+            SHELLY_UP.set(0)
+            log.exception("Shelly Cloud authentication failed - check SHELLY_AUTH_KEY")
+        except ShellyRateLimitError:
+            SCRAPE_ERRORS.inc()
+            SHELLY_UP.set(0)
+            log.warning("Shelly Cloud rate limit hit, will retry next poll interval")
+        except requests.exceptions.Timeout:
+            SCRAPE_ERRORS.inc()
+            SHELLY_UP.set(0)
+            log.error("Timed out connecting to Shelly Cloud at %s", config.server_uri)
+        except requests.exceptions.ConnectionError:
+            SCRAPE_ERRORS.inc()
+            SHELLY_UP.set(0)
+            log.error("Cannot connect to Shelly Cloud at %s", config.server_uri)
+        except requests.exceptions.RequestException:
+            SCRAPE_ERRORS.inc()
+            SHELLY_UP.set(0)
+            log.exception("Shelly Cloud HTTP request failed")
         except Exception:
             SCRAPE_ERRORS.inc()
             SHELLY_UP.set(0)

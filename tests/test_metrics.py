@@ -38,6 +38,7 @@ class TestUpdateMetricsGen1:
             "relays": [{"ison": True}],
             "meters": [{"power": 42.5, "total": 12345.0}],
             "tmp": {"tC": 35.2},
+            "hum": {"value": 49.5, "is_valid": True},
             "wifi_sta": {"rssi": -60},
         }
     }
@@ -57,6 +58,10 @@ class TestUpdateMetricsGen1:
         update_metrics(self.DEVICES_STATUS)
         assert _value(TEMPERATURE, self.DEVICE_ID, "0") == 35.2
         assert _value(WIFI_RSSI, self.DEVICE_ID) == -60.0
+
+    def test_humidity(self) -> None:
+        update_metrics(self.DEVICES_STATUS)
+        assert _value(HUMIDITY, self.DEVICE_ID, "0") == 49.5
 
     def test_marks_up_and_devices_total(self) -> None:
         update_metrics(self.DEVICES_STATUS)

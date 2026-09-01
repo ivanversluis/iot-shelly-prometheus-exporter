@@ -8,7 +8,7 @@ import pytest
 
 import exporter.shelly_client as client_module
 from exporter.config import ShellyConfig
-from exporter.shelly_client import fetch_all_devices
+from exporter.shelly_client import ShellyAuthError, ShellyRateLimitError, fetch_all_devices
 
 
 class TestShellyConfigFromEnv:
@@ -105,7 +105,7 @@ class TestFetchAllDevices:
         assert captured["timeout"] == 10
 
     def test_raises_on_isok_false(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        fake_response = _FakeResponse({"isok": False, "errors": ["bad auth_key"]})
+        fake_response = _FakeResponse({"isok": False, "errors": ["internal server error"]})
         monkeypatch.setattr(client_module.requests, "get", lambda *a, **k: fake_response)
 
         with pytest.raises(RuntimeError, match="Shelly Cloud API returned an error"):
@@ -116,4 +116,32 @@ class TestFetchAllDevices:
         monkeypatch.setattr(client_module.requests, "get", lambda *a, **k: fake_response)
 
         with pytest.raises(RuntimeError, match="Unexpected Shelly Cloud response shape"):
+            fetch_all_devices(CONFIG)
+
+    def test_raises_shelly_auth_error_on_401(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        fake_response = _FakeResponse({}, status_code=401)
+        monkeypatch.setattr(client_module.requests, "get", lambda *a, **k: fake_response)
+
+        with pytest.raises(ShellyAuthError, match="HTTP 401"):
+            fetch_all_devices(CONFIG)
+
+    def test_raises_shelly_auth_error_on_403(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        fake_response = _FakeResponse({}, status_code=403)
+        monkeypatch.setattr(client_module.requests, "get", lambda *a, **k: fake_response)
+
+        with pytest.raises(ShellyAuthError, match="HTTP 403"):
+            fetch_all_devices(CONFIG)
+
+    def test_raises_shelly_auth_error_on_isok_false_auth_message(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        fake_response = _FakeResponse({"isok": False, "errors": ["invalid auth_key"]})
+        monkeypatch.setattr(client_module.requests, "get", lambda *a, **k: fake_response)
+
+        with pytest.raises(ShellyAuthError, match="rejected the auth key"):
+            fetch_all_devices(CONFIG)
+
+    def test_raises_rate_limit_error_on_429(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        fake_response = _FakeResponse({}, status_code=429)
+        monkeypatch.setattr(client_module.requests, "get", lambda *a, **k: fake_response)
+
+        with pytest.raises(ShellyRateLimitError, match="rate limit exceeded"):
             fetch_all_devices(CONFIG)
