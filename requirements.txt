@@ -1,0 +1,2 @@
+requests~=2.32
+prometheus-client~=0.20
