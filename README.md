@@ -29,17 +29,18 @@ Shelly Cloud API (HTTPS) ──> shelly_client.py ──> metrics.py ──> /me
 
 ## Runtime configuration
 
-`SHELLY_AUTH_KEY` and `SHELLY_SERVER_URI` are required. For local testing, use the `cloud-key` and
-`server` values already stored in Vault at `infra/home-exporters/iot-shelly-prometheus-exporter`.
+`SHELLY_AUTH_KEY` and `SHELLY_SERVER_URI` are required. Configuration is validated before the
+metrics server binds or Shelly Cloud is contacted; invalid configuration terminates startup with a
+credential-safe error.
 
-| Variable | Default | Purpose |
+| Variable | Default | Accepted values |
 |---|---:|---|
-| `SHELLY_AUTH_KEY` | required | Shelly Cloud authorization key (Vault: `cloud-key`) |
-| `SHELLY_SERVER_URI` | required | Shelly Cloud server, e.g. `https://shelly-213-eu.shelly.cloud` (Vault: `server`) |
-| `SHELLY_REQUEST_TIMEOUT` | `10` | HTTP request timeout in seconds |
-| `POLL_INTERVAL` | `30` | Poll interval in seconds |
-| `METRICS_PORT` | `9100` | HTTP metrics port |
-| `LOG_LEVEL` | `INFO` | Python logging level |
+| `SHELLY_AUTH_KEY` | required | Non-empty, non-whitespace Shelly Cloud authorization key |
+| `SHELLY_SERVER_URI` | required | HTTPS origin with a host, optional valid port, and optional single trailing slash; credentials, paths, queries, and fragments are rejected |
+| `SHELLY_REQUEST_TIMEOUT` | `10` | Integer greater than zero, in seconds |
+| `POLL_INTERVAL` | `30` | Integer of at least one second |
+| `METRICS_PORT` | `9100` | Integer from `1` through `65535` |
+| `LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL` (case-insensitive) |
 
 ## Metrics
 
@@ -68,8 +69,8 @@ Gen1 and Gen2+ devices report different underlying JSON shapes; both are normali
 ## Local run
 
 ```bash
-export SHELLY_AUTH_KEY="<cloud-key from Vault>"
-export SHELLY_SERVER_URI="https://shelly-213-eu.shelly.cloud"
+export SHELLY_AUTH_KEY="<your Shelly Cloud authorization key>"
+export SHELLY_SERVER_URI="https://<your assigned Shelly Cloud server>"
 make install
 make run
 curl http://127.0.0.1:9100/metrics

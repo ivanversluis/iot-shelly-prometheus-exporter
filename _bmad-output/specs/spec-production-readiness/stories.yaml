@@ -1,0 +1,40 @@
+- id: "1"
+  title: Isolate automated test state
+  description: >-
+    Establish deterministic registry and poll-loop test seams for CAP-5 before
+    behavior changes; satisfy AC-1.
+- id: "2"
+  title: Validate runtime configuration
+  description: >-
+    Enforce the credential-safe startup configuration contract in CAP-1;
+    satisfy AC-2 without changing valid defaults.
+- id: "3"
+  title: Harden failures and credential-safe diagnostics
+  description: >-
+    Implement the bounded polling and redacted diagnostic behavior in CAP-2
+    and CAP-3; satisfy AC-3.
+- id: "4"
+  title: Make metric lifecycle accurate and compatible
+  description: >-
+    Preserve the Prometheus contract while retiring samples after successful
+    disappearance as required by CAP-4 and AC-4.
+- id: "5"
+  title: Harden the container boundary
+  description: >-
+    Exclude unsafe build-context content and prove non-root runtime behavior
+    for CAP-6; satisfy AC-5.
+- id: "6"
+  title: Upgrade CI quality and security gates
+  description: >-
+    Make pull requests enforce the test, coverage, dependency, and image gates
+    in CAP-5 through CAP-7; satisfy AC-6.
+- id: "7"
+  title: Add patch, minor, and major release promotion
+  description: >-
+    Add safe SemVer calculation, version commits, and annotated Git tags for
+    CAP-7; satisfy AC-7 while keeping this milestone on the 0.x line.
+- id: "8"
+  title: Make operator documentation standalone-first
+  description: >-
+    Align maintainer and operator guidance with completed behavior and remove
+    personal infrastructure assumptions for CAP-8; satisfy AC-8.
