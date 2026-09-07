@@ -2,8 +2,8 @@
 title: 'CAP-1 Runtime Configuration Validation'
 type: 'feature'
 created: '2026-09-04'
-status: 'in-review'
-review_loop_iteration: 0
+status: 'done'
+review_loop_iteration: 1
 baseline_commit: '2a675889a572141407a58541dab26022d6d3f44f'
 context:
   - '{project-root}/AGENTS.md'
@@ -79,3 +79,12 @@ Keep environment validation in `from_env()` rather than `__post_init__`, preserv
 - `.venv/bin/pytest tests/test_shelly_client.py -v` — focused configuration and client tests pass without network access.
 - `make test` — complete repository suite passes.
 - `make compile` — Python package compiles successfully.
+
+## Review
+
+The mandatory blind, edge-case, and verification-gap reviews completed. The
+implementation was tightened to reject malformed hostnames and backslashes in
+server origins, and the subprocess test now derives the repository root from
+its own location. Additional suggestions that expand this story (hostname
+canonicalization, credential character policy, socket assertions, and broader
+startup permutations) are deferred to later production-readiness stories.

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import ipaddress
 import os
+import re
 from dataclasses import dataclass
 from urllib.parse import urlsplit
 
@@ -32,13 +34,26 @@ def _server_origin(raw: str) -> str:
         for character in raw
     ):
         raise RuntimeError("SHELLY_SERVER_URI must not contain whitespace or control characters")
-    if "?" in raw or "#" in raw:
+    if "?" in raw or "#" in raw or "\\" in raw:
         raise RuntimeError("SHELLY_SERVER_URI must be an HTTPS origin without query or fragment")
 
     try:
         parsed = urlsplit(raw)
         hostname = parsed.hostname
         port = parsed.port
+    except ValueError:
+        raise RuntimeError("SHELLY_SERVER_URI must be a valid HTTPS origin") from None
+
+    try:
+        if not hostname:
+            raise ValueError
+        if ":" in hostname:
+            ipaddress.IPv6Address(hostname)
+        elif not all(
+            re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?", label)
+            for label in hostname.split(".")
+        ):
+            raise ValueError
     except ValueError:
         raise RuntimeError("SHELLY_SERVER_URI must be a valid HTTPS origin") from None
 

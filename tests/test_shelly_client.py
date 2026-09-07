@@ -76,7 +76,10 @@ class TestShellyConfigFromEnv:
             "https://example.com:0",
             "https://example.com:70000",
             "https://example.com:",
+            "https://-",
+            "https://.",
             "https://[not-an-ipv6-address]",
+            "https://example\\.com",
             "https://example.com/ planted-uri-secret",
             "https://example.com/\x1fplanted-uri-secret",
         ],
@@ -223,7 +226,7 @@ class TestShellyConfigFromEnv:
 
         result = subprocess.run(
             [sys.executable, "-m", "exporter"],
-            cwd=os.getcwd(),
+            cwd=os.path.dirname(os.path.dirname(__file__)),
             env=environment,
             capture_output=True,
             text=True,
