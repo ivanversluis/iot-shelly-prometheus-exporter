@@ -2,7 +2,7 @@ IMAGE_NAME ?= shelly-prometheus-exporter
 PYTHON ?= python3
 VENV ?= .venv
 
-.PHONY: help install install-dev test coverage compile run docker-build docker-run clean
+.PHONY: help install install-dev test coverage compile release run docker-build docker-run clean
 
 help:
 	@echo "Available targets:"
@@ -11,6 +11,7 @@ help:
 	@echo "  test          Run the test suite"
 	@echo "  coverage      Run tests with a coverage report"
 	@echo "  compile       Byte-compile the exporter package (syntax check)"
+	@echo "  release       Promote a local release (PROMOTION=patch|minor|major)"
 	@echo "  run           Run the exporter locally (set SHELLY_AUTH_KEY/SHELLY_SERVER_URI first)"
 	@echo "  docker-build  Build the container image"
 	@echo "  docker-run    Run the container image locally (set SHELLY_AUTH_KEY/SHELLY_SERVER_URI first)"
@@ -41,6 +42,10 @@ coverage: install-dev
 
 compile: install
 	$(VENV)/bin/python -m compileall exporter
+
+release:
+	@test -n "$(PROMOTION)" || (echo "usage: make release PROMOTION=patch|minor|major"; exit 2)
+	$(PYTHON) scripts/release.py "$(PROMOTION)"
 
 run: install
 	$(VENV)/bin/python -m exporter

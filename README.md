@@ -84,6 +84,29 @@ make test       # pytest tests/ -v
 make coverage   # pytest with coverage report
 ```
 
+## Releases
+
+Release promotion is a local, credential-free operation. From a clean checkout, run the same
+validation gates used by the command and choose exactly one promotion:
+
+```bash
+make test
+make compile
+make release PROMOTION=patch   # 0.1.0 -> 0.1.1
+make release PROMOTION=minor   # 0.1.0 -> 0.2.0
+make release PROMOTION=major   # 0.1.0 -> 1.0.0
+```
+
+The command reads the version only from `pyproject.toml`, refuses dirty trees and existing tags,
+updates the metadata, commits it, and creates an annotated local `vX.Y.Z` tag. It never pushes;
+inspect the commit and tag, then publish through the authorized default-branch/version-tag GitHub
+Actions workflow. This project is still `0.x`: patch and minor releases are normal, while major is
+reserved for an explicit `1.0.0` decision.
+
+Use immutable image tags (`vX.Y.Z` or `sha-<commit>`) in deployment and release notes. Release
+notes should mention metric compatibility, configuration/operator actions, and known limitations.
+To roll back, deploy the previous immutable image tag; do not move or overwrite a release tag.
+
 ## Container build
 
 The GitHub Actions workflow at `.github/workflows/docker-build.yaml` builds and pushes to GHCR on every push to `main`, on version tags (`v*`), and on `workflow_dispatch`. Pull requests run the validate step only (no push). The image is published as:
